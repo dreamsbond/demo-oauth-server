@@ -4,6 +4,7 @@ use App\Api\UsersApi;
 use App\Data\Models\User;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
+use Hashids\HashidsInterface;
 use Limoncello\Crypt\Contracts\HasherInterface;
 use Limoncello\Flute\Contracts\FactoryInterface;
 use Limoncello\Passport\Contracts\Entities\TokenInterface;
@@ -87,10 +88,10 @@ final class OAuth
         if ($scope !== null) {
             /** @var UsersApi $usersApi */
             /** @var FactoryInterface $factory */
-            $factory  = $container->get(FactoryInterface::class);
+            $factory = $container->get(FactoryInterface::class);
             $usersApi = $factory->createApi(UsersApi::class);
 
-            $userScopes    = $usersApi->noAuthReadScopes($userId);
+            $userScopes = $usersApi->noAuthReadScopes($userId);
             $adjustedScope = array_intersect($userScopes, $scope);
             if (count($adjustedScope) !== count($scope)) {
                 $result = $adjustedScope;
@@ -114,6 +115,8 @@ final class OAuth
     {
         $userId = $token->getUserIdentifier();
 
+        /** @var HashidsInterface $hashids */
+        $hashids = $container->get(HashidsInterface::class);
         /** @var FactoryInterface $factory */
         $factory = $container->get(FactoryInterface::class);
         /** @var UsersApi $usersApi */
@@ -128,10 +131,10 @@ final class OAuth
         $user = $usersApi->fetchRow($builder, User::class);
 
         return [
-            User::FIELD_ID         => $userId,
-            User::FIELD_EMAIL      => $user[User::FIELD_EMAIL],
-            User::FIELD_FIRST_NAME => $user[User::FIELD_FIRST_NAME],
-            User::FIELD_LAST_NAME  => $user[User::FIELD_LAST_NAME],
+            User::FIELD_ID => $hashids->encode($user[User::FIELD_ID]),
+            //            User::FIELD_ID         => $userId,
+            //            User::FIELD_FIRST_NAME => $user[User::FIELD_FIRST_NAME],
+            //            User::FIELD_LAST_NAME  => $user[User::FIELD_LAST_NAME],
         ];
     }
 }

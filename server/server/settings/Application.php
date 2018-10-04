@@ -18,18 +18,18 @@ class Application implements ApplicationConfigurationInterface
     {
         (new Dotenv(implode(DIRECTORY_SEPARATOR, [__DIR__, '..', '..'])))->load();
 
-        $routesMask     = '*Routes.php';
-        $routesFolder   = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'app', 'Routes']);
-        $webCtrlFolder  = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'app', 'Web', 'Controllers']);
-        $routesPath     = implode(DIRECTORY_SEPARATOR, [$routesFolder, $routesMask]);
-        $confPath       = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'app', 'Container', '*.php']);
+        $routesMask = '*Routes.php';
+        $routesFolder = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'app', 'Routes']);
+        $webCtrlFolder = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'app', 'Web', 'Controllers']);
+        $routesPath = implode(DIRECTORY_SEPARATOR, [$routesFolder, $routesMask]);
+        $confPath = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'app', 'Container', '*.php']);
         $commandsFolder = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'app', 'Commands']);
-        $cacheFolder    = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'storage', 'cache', 'settings']);
+        $cacheFolder = implode(DIRECTORY_SEPARATOR, [__DIR__, '..', 'storage', 'cache', 'settings']);
 
         $originScheme = getenv('APP_ORIGIN_SCHEME');
-        $originHost   = getenv('APP_ORIGIN_HOST');
-        $originPort   = getenv('APP_ORIGIN_PORT');
-        $originUri    = filter_var("$originScheme://$originHost:$originPort", FILTER_VALIDATE_URL);
+        $originHost = getenv('APP_ORIGIN_HOST');
+        $originPort = getenv('APP_ORIGIN_PORT');
+        $originUri = filter_var("$originScheme://$originHost:$originPort", FILTER_VALIDATE_URL);
         assert(is_string($originUri) === true);
 
         return [
@@ -70,6 +70,8 @@ class Application implements ApplicationConfigurationInterface
                 \Limoncello\Templates\Package\TwigTemplatesProvider::class,
 
                 \App\Providers\CustomPassportProvider::class,
+
+                \App\Providers\HashidsProvider::class,
             ],
         ];
     }

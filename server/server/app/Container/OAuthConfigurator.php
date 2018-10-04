@@ -1,10 +1,15 @@
 <?php namespace App\Container;
 
+use App\Web\Controllers\AuthController;
 use App\Web\Controllers\ControllerTrait;
 use App\Web\Views;
+use Limoncello\Contracts\Application\ApplicationConfigurationInterface;
+use Limoncello\Contracts\Application\CacheSettingsProviderInterface;
 use Limoncello\Contracts\Application\ContainerConfiguratorInterface;
 use Limoncello\Contracts\Container\ContainerInterface as LimoncelloContainerInterface;
+use Limoncello\Contracts\Http\RequestStorageInterface;
 use Limoncello\Contracts\Passport\PassportAccountManagerInterface;
+use Limoncello\Contracts\Routing\RouterInterface;
 use Limoncello\Contracts\Session\SessionInterface;
 use Limoncello\Contracts\Templates\TemplatesInterface;
 use Limoncello\OAuthServer\Contracts\ClientInterface;
@@ -13,8 +18,10 @@ use Limoncello\Passport\Adaptors\Generic\PassportServerIntegration;
 use Limoncello\Passport\Contracts\PassportServerIntegrationInterface;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\UriInterface;
 use Zend\Diactoros\Response\HtmlResponse;
-use Zend\Diactoros\Response\TextResponse;
+use Zend\Diactoros\Response\RedirectResponse;
+use Zend\Diactoros\Uri;
 
 /**
  * @package App\Container
@@ -42,12 +49,29 @@ class OAuthConfigurator implements ContainerConfiguratorInterface
                     array $scopeList = null,
                     string $state = null,
                     array $extraParameters = []
-                ): ResponseInterface {
+                ): ResponseInterface
+                {
+                    /** @var CacheSettingsProviderInterface $provider */
+                    $provider = $this->getContainer()->get(CacheSettingsProviderInterface::class);
+                    $originScheme = $provider->getApplicationConfiguration()[ApplicationConfigurationInterface::KEY_APP_ORIGIN_SCHEMA];
+                    $originHost = $provider->getApplicationConfiguration()[ApplicationConfigurationInterface::KEY_APP_ORIGIN_HOST];
+                    $originPort = $provider->getApplicationConfiguration()[ApplicationConfigurationInterface::KEY_APP_ORIGIN_PORT];
+
+                    $originUri = $originPort === null || $originPort === 80 ? "$originScheme://$host" : "$originScheme://$originHost:$originPort";
+
                     /** @var PassportAccountManagerInterface $manager */
-                    $manager  = $this->getContainer()->get(PassportAccountManagerInterface::class);
+                    $manager = $this->getContainer()->get(PassportAccountManagerInterface::class);
                     $passport = $manager->getPassport();
                     if ($passport === null) {
-                        return new TextResponse('Not yet implemented. Sorry you have to log-in into server first and then authenticate from client.', 400);
+                        /** @var RouterInterface $router */
+                        $router = $this->getContainer()->get(RouterInterface::class);
+                        /** @var UriInterface $signInUri */
+                        $signInUri = new Uri($router->get($originUri, AuthController::ROUTE_NAME_SIGN_IN));
+                        $newUri = $signInUri->withQuery(http_build_query([
+                            'code_login' => true,
+                        ]));
+
+                        return new RedirectResponse($newUri);
                     }
 
                     // remember what was before user's approval
@@ -59,13 +83,14 @@ class OAuthConfigurator implements ContainerConfiguratorInterface
                         'is-scope-modified'   => $isScopeModified,
                         'initial-scopes'      => $scopeList,
                         'state-from-client'   => $state,
+                        'user-id'             => $passport->getUserIdentity(),
                     ];
 
                     // and show a list of scopes request by the client
                     /** @var Client $client */
                     assert($client instanceof Client);
 
-                    $formatter    = static::createFormatter($this->getContainer(), Views::NAMESPACE);
+                    $formatter = static::createFormatter($this->getContainer(), Views::NAMESPACE);
                     $templateName = $formatter->formatMessage(Views::OAUTH_SCOPE_APPROVAL);
 
                     $parameters = [

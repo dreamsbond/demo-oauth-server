@@ -15,7 +15,8 @@
         "php": ">=7.1.0",
         "vlucas/phpdotenv": "^2.3",
         "limoncello-php/framework": "^0.10.0",
-        "twig/extensions": "^1.5"
+        "twig/extensions": "^1.5",
+        "hashids/hashids": "^3.0"
     },
     "require-dev": {
         "limoncello-php/testing": "^0.10.0",

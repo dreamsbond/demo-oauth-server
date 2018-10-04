@@ -15,6 +15,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Settings\Authorization;
 use Traversable;
 use Zend\Diactoros\Response\HtmlResponse;
+use Zend\Diactoros\Response\JsonResponse;
 use Zend\Diactoros\Response\RedirectResponse;
 use Zend\Diactoros\Response\TextResponse;
 
@@ -67,7 +68,8 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
 
         $body = static::view($container, Views::SIGN_IN_PAGE, [
             'password_min_length' => User::MIN_PASSWORD_LENGTH,
@@ -91,7 +93,8 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
         $inputs = $request->getParsedBody();
         if (is_array($inputs) === false) {
             return new HtmlResponse(static::view($container, Views::SIGN_IN_PAGE, [
@@ -121,7 +124,7 @@ class AuthController extends BaseController
         // actual check for user email and password
         /** @var PassportServerIntegrationInterface $passport */
         $passport = $container->get(PassportServerIntegrationInterface::class);
-        $userId   = $passport->validateUserId($email, $password);
+        $userId = $passport->validateUserId($email, $password);
         if ($userId === null) {
             return new HtmlResponse(static::view($container, Views::SIGN_IN_PAGE, [
                 'error_message'       => 'Invalid email or password.',
@@ -159,7 +162,8 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
         /** @var CookieJarInterface $cookies */
         $cookies = $container->get(CookieJarInterface::class);
 
@@ -186,29 +190,32 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
         $authCode = $request->getQueryParams()['code'] ?? null;
         if (empty($authCode) === true) {
             return new TextResponse('Empty auth code.', 400);
         }
 
-        $client   = new \GuzzleHttp\Client();
-        $response = $client->request('POST', 'http://localhost:8888/token', [
+        $client = new \GuzzleHttp\Client();
+        $response = $client->request('POST', 'http://localhost:8080/token', [
             'form_params' => [
                 'grant_type'   => 'authorization_code',
                 'code'         => $authCode,
-                'redirect_uri' => 'http://localhost:8080/my-client-redirect',
+                'redirect_uri' => 'http://localhost:8081/my-client-redirect',
                 'client_id'    => 'client1',
             ]
         ]);
 
-        return new TextResponse(
-            "Auth code $authCode was sent to OAuth server and here is the response" . PHP_EOL
-            . PHP_EOL
-            . 'HTTP Status: ' . $response->getStatusCode() . PHP_EOL
-            . PHP_EOL
-            . (string)$response->getBody()
-        );
+        return new JsonResponse(json_decode((string)$response->getBody()));
+//        return new JsonResponse((string)$response->getBody());
+//        return new TextResponse(
+//            "Auth code $authCode was sent to OAuth server and here is the response" . PHP_EOL
+//            . PHP_EOL
+//            . 'HTTP Status: ' . $response->getStatusCode() . PHP_EOL
+//            . PHP_EOL
+//            . (string)$response->getBody()
+//        );
     }
 
     /**
@@ -230,7 +237,8 @@ class AuthController extends BaseController
         string $defaultRedirectUrl,
         PassportServerIntegrationInterface $passport,
         CookieJarInterface $cookies
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
         // default scope of default OAuth client
         $clientScope = $passport->getClientRepository()->readScopeIdentifiers($passport->getDefaultClientIdentifier());
         // limit the default scope to user's role allowed scopes
@@ -250,7 +258,7 @@ class AuthController extends BaseController
         }
         list($tokenValue, $tokenType, $tokenExpiresIn, $refreshValue) = $passport->generateTokenValues($unsavedToken);
         $unsavedToken->setValue($tokenValue)->setType($tokenType)->setRefreshValue($refreshValue);
-        $savedToken     = $passport->getTokenRepository()->createToken($unsavedToken);
+        $savedToken = $passport->getTokenRepository()->createToken($unsavedToken);
         $valueForCookie = $savedToken->getValue();
 
         // now cookie ...

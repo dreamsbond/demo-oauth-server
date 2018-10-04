@@ -74,7 +74,8 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
 
         $body = static::view($container, Views::SIGN_IN_PAGE, [
             'password_min_length' => User::MIN_PASSWORD_LENGTH,
@@ -98,8 +99,11 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
         $inputs = $request->getParsedBody();
+        $codeLogin = $request->getQueryParams()['code_login'] == 1;
+
         if (is_array($inputs) === false) {
             return new HtmlResponse(static::view($container, Views::SIGN_IN_PAGE, [
                 'error_message'       => 'Invalid input data.',
@@ -128,7 +132,7 @@ class AuthController extends BaseController
         // actual check for user email and password
         /** @var PassportServerIntegrationInterface $passport */
         $passport = $container->get(PassportServerIntegrationInterface::class);
-        $userId   = $passport->validateUserId($email, $password);
+        $userId = $passport->validateUserId($email, $password);
         if ($userId === null) {
             return new HtmlResponse(static::view($container, Views::SIGN_IN_PAGE, [
                 'error_message'       => 'Invalid email or password.',
@@ -136,6 +140,10 @@ class AuthController extends BaseController
                 'password_min_length' => User::MIN_PASSWORD_LENGTH,
             ]), 401);
         }
+
+//        if ($codeLogin === true) {
+//            return new RedirectResponse('http://localhost:8080/authorize?response_type=code&client_id=client1');
+//        }
 
         // if we are here name and password are valid.
         // we have to create an auth token and return its value as a cookie.
@@ -145,7 +153,8 @@ class AuthController extends BaseController
             $isRemember,
             $request->getQueryParams(),
             static::getSettings($container, Authorization::class),
-            static::createRouteUrl($container, HomeController::ROUTE_NAME_HOME),
+//            static::createRouteUrl($container, HomeController::ROUTE_NAME_HOME),
+            $codeLogin === true ? 'http://localhost:8080/authorize?response_type=code&client_id=client1' : static::createRouteUrl($container, HomeController::ROUTE_NAME_HOME),
             $passport,
             $container->get(CookieJarInterface::class)
         );
@@ -166,7 +175,8 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
         /** @var CookieJarInterface $cookies */
         $cookies = $container->get(CookieJarInterface::class);
 
@@ -193,7 +203,8 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
 
         $body = static::view($container, Views::OAUTH_ERROR, [
             // no params atm
@@ -216,8 +227,8 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
-
+    ): ResponseInterface
+    {
         /** @var SessionInterface $session */
         $session = $container->get(SessionInterface::class);
         [
@@ -226,6 +237,7 @@ class AuthController extends BaseController
             'is-scope-modified'   => $isScopeModified,
             'initial-scopes'      => $scopeList,
             'state-from-client'   => $state,
+            'user-id'             => $userId,
         ] = $session['oauth-scopes-before-approval'];
 
         // if you allow the user to change allowed scopes
@@ -233,10 +245,11 @@ class AuthController extends BaseController
 
         // as this is just a simple demo we assume the user confirmed scopes (no option to deny)
         // so we need to create authorization code and send it to client via redirect URL.
-        $token    = (new Token())
+        $token = (new Token())
             ->setRedirectUriString($redirectUri)
             ->setClientIdentifier($clientId)
-            ->setScopeIdentifiers($scopeList);
+            ->setScopeIdentifiers($scopeList)
+            ->setUserIdentifier($userId);
 
         if ($isScopeModified === true) {
             $token->setScopeModified();
@@ -264,7 +277,8 @@ class AuthController extends BaseController
         array $routeParams,
         ContainerInterface $container,
         ServerRequestInterface $request
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
 
         $body = static::view($container, Views::OAUTH_ERROR, [
             // no params atm
@@ -292,7 +306,8 @@ class AuthController extends BaseController
         string $defaultRedirectUrl,
         PassportServerIntegrationInterface $passport,
         CookieJarInterface $cookies
-    ): ResponseInterface {
+    ): ResponseInterface
+    {
         // default scope of default OAuth client
         $clientScope = $passport->getClientRepository()->readScopeIdentifiers($passport->getDefaultClientIdentifier());
         // limit the default scope to user's role allowed scopes
@@ -312,7 +327,7 @@ class AuthController extends BaseController
         }
         list($tokenValue, $tokenType, $tokenExpiresIn, $refreshValue) = $passport->generateTokenValues($unsavedToken);
         $unsavedToken->setValue($tokenValue)->setType($tokenType)->setRefreshValue($refreshValue);
-        $savedToken     = $passport->getTokenRepository()->createToken($unsavedToken);
+        $savedToken = $passport->getTokenRepository()->createToken($unsavedToken);
         $valueForCookie = $savedToken->getValue();
 
         // now cookie ...

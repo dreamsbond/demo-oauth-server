@@ -119,7 +119,7 @@ class PassportSeed implements SeedInterface
                 static::SCOPE_VIEW_USERS,
                 static::SCOPE_VIEW_ROLES,
             ]);
-        $this->seedClient($integration, $client, [], ['http://localhost:8080/my-client-redirect']);
+        $this->seedClient($integration, $client, [], ['http://localhost:8081/my-client-redirect']);
     }
 
     /**

@@ -72,7 +72,7 @@ trait ControllerTrait
         if ($data->isCollection() === true && (0 < $data->getOffset() || $data->hasMoreItems() === true)) {
             parse_str($originalUri->getQuery(), $queryParams);
 
-            $pageSize    = $data->getLimit();
+            $pageSize = $data->getLimit();
             $linkClosure = function (int $offset) use ($originalUri, $pageSize, $queryParams): UriInterface {
                 $paramsWithPaging = array_merge($queryParams, [
                     BaseQueryParserInterface::PARAM_PAGE => [
@@ -87,11 +87,11 @@ trait ControllerTrait
             };
 
             if ($data->getOffset() > 0) {
-                $prevOffset                             = max(0, $data->getOffset() - $data->getLimit());
+                $prevOffset = max(0, $data->getOffset() - $data->getLimit());
                 $links[DocumentInterface::KEYWORD_PREV] = $linkClosure($prevOffset);
             }
             if ($data->hasMoreItems() === true) {
-                $nextOffset                             = $data->getOffset() + $data->getLimit();
+                $nextOffset = $data->getOffset() + $data->getLimit();
                 $links[DocumentInterface::KEYWORD_NEXT] = $linkClosure($nextOffset);
             }
         }
@@ -115,15 +115,16 @@ trait ControllerTrait
         int $viewId,
         array $parameters = [],
         string $viewsNamespace = Views::NAMESPACE
-    ): string {
-        $formatter    = static::createFormatter($container, $viewsNamespace);
+    ): string
+    {
+        $formatter = static::createFormatter($container, $viewsNamespace);
         $templateName = $formatter->formatMessage($viewId);
 
         /** @var TemplatesInterface $templates */
         $templates = $container->get(TemplatesInterface::class);
 
         /** @var CacheSettingsProviderInterface $provider */
-        $provider  = $container->get(CacheSettingsProviderInterface::class);
+        $provider = $container->get(CacheSettingsProviderInterface::class);
         $originUri = $provider->getApplicationConfiguration()[A::KEY_APP_ORIGIN_URI];
 
         $currentUser = static::getCurrentUser($container);
@@ -133,34 +134,34 @@ trait ControllerTrait
         $isSignedIn = $currentUser !== null;
         if ($isSignedIn === true) {
             $firstName = $currentUser->getProperty(User::FIELD_FIRST_NAME);
-            $lastName  = $currentUser->getProperty(User::FIELD_LAST_NAME);
-            $roleName  = $currentUser->getProperty(Role::FIELD_ID);
+            $lastName = $currentUser->getProperty(User::FIELD_LAST_NAME);
+            $roleName = $currentUser->getProperty(Role::FIELD_ID);
 
-            $allowedScopes  = $currentUser->getScopes();
-            $canAdminUsers  = in_array(PassportSeed::SCOPE_ADMIN_USERS, $allowedScopes);
-            $canAdminRoles  = in_array(PassportSeed::SCOPE_ADMIN_ROLES, $allowedScopes);
-            $canViewUsers   = in_array(PassportSeed::SCOPE_VIEW_USERS, $allowedScopes);
-            $canViewRoles   = in_array(PassportSeed::SCOPE_VIEW_ROLES, $allowedScopes);
-            $indexMethod    = WebControllerInterface::METHOD_INDEX;
+            $allowedScopes = $currentUser->getScopes();
+            $canAdminUsers = in_array(PassportSeed::SCOPE_ADMIN_USERS, $allowedScopes);
+            $canAdminRoles = in_array(PassportSeed::SCOPE_ADMIN_ROLES, $allowedScopes);
+            $canViewUsers = in_array(PassportSeed::SCOPE_VIEW_USERS, $allowedScopes);
+            $canViewRoles = in_array(PassportSeed::SCOPE_VIEW_ROLES, $allowedScopes);
+            $indexMethod = WebControllerInterface::METHOD_INDEX;
             $usersRouteName = static::routeName(WebRoutes::TOP_GROUP_PREFIX, UserSchema::TYPE, $indexMethod);
             $rolesRouteName = static::routeName(WebRoutes::TOP_GROUP_PREFIX, RoleSchema::TYPE, $indexMethod);
-            $usersUrl       = $canViewUsers === true ? static::createRouteUrl($container, $usersRouteName) : null;
-            $rolesUrl       = $canViewRoles === true ? static::createRouteUrl($container, $rolesRouteName) : null;
+            $usersUrl = $canViewUsers === true ? static::createRouteUrl($container, $usersRouteName) : null;
+            $rolesUrl = $canViewRoles === true ? static::createRouteUrl($container, $rolesRouteName) : null;
 
-            $signInUrl  = null;
+            $signInUrl = null;
             $signOutUrl = static::createRouteUrl($container, AuthController::ROUTE_NAME_LOGOUT);
         } else {
-            $firstName     = null;
-            $lastName      = null;
-            $roleName      = null;
+            $firstName = null;
+            $lastName = null;
+            $roleName = null;
             $canAdminUsers = false;
             $canAdminRoles = false;
-            $canViewUsers  = false;
-            $canViewRoles  = false;
-            $usersUrl      = null;
-            $rolesUrl      = null;
-            $signInUrl     = static::createRouteUrl($container, AuthController::ROUTE_NAME_SIGN_IN);
-            $signOutUrl    = null;
+            $canViewUsers = false;
+            $canViewRoles = false;
+            $usersUrl = null;
+            $rolesUrl = null;
+            $signInUrl = static::createRouteUrl($container, AuthController::ROUTE_NAME_SIGN_IN);
+            $signOutUrl = null;
         }
 
         $defaultParams = [
@@ -199,10 +200,11 @@ trait ControllerTrait
     protected static function createFormValidator(
         ContainerInterface $container,
         string $rulesClass
-    ): FormValidatorInterface {
+    ): FormValidatorInterface
+    {
         /** @var FormValidatorFactoryInterface $validatorFactory */
         $validatorFactory = $container->get(FormValidatorFactoryInterface::class);
-        $validator        = $validatorFactory->createValidator($rulesClass);
+        $validator = $validatorFactory->createValidator($rulesClass);
 
         return $validator;
     }
@@ -219,7 +221,8 @@ trait ControllerTrait
     protected static function convertModelToFormRepresentation(
         ContainerInterface $container,
         ModelInterface $model
-    ): ?array {
+    ): ?array
+    {
         /** @var JsonSchemasInterface $schemas */
         $schemas = $container->get(JsonSchemasInterface::class);
         /** @var SchemaInterface $schema */
@@ -237,11 +240,11 @@ trait ControllerTrait
         if (array_key_exists(SchemaInterface::SCHEMA_RELATIONSHIPS, $mappings) === true) {
             /** @var ModelSchemaInfoInterface $modelSchemeInfo */
             $modelSchemeInfo = $container->get(ModelSchemaInfoInterface::class);
-            $modelClass      = get_class($model);
+            $modelClass = get_class($model);
             foreach ($mappings[SchemaInterface::SCHEMA_RELATIONSHIPS] as $jsonRelName => $modelRelName) {
                 $relationshipType = $modelSchemeInfo->getRelationshipType($modelClass, $modelRelName);
                 if ($relationshipType === RelationshipTypes::BELONGS_TO) {
-                    $fkName                 = $modelSchemeInfo->getForeignKey($modelClass, $modelRelName);
+                    $fkName = $modelSchemeInfo->getForeignKey($modelClass, $modelRelName);
                     $formData[$jsonRelName] = $model->{$fkName} ?? null;
                 }
             }
@@ -264,7 +267,8 @@ trait ControllerTrait
         ContainerInterface $container,
         string $schemaClass,
         array $formData
-    ): array {
+    ): array
+    {
         assert(self::classImplements($schemaClass, SchemaInterface::class));
 
         /** @var SchemaInterface $schemaClass */
@@ -277,11 +281,11 @@ trait ControllerTrait
         $modelSchemeInfo = $container->get(ModelSchemaInfoInterface::class);
         foreach ($formData as $jsonName => $value) {
             if ($schemaClass::hasAttributeMapping($jsonName) === true) {
-                $modelAttrName              = $schemaClass::getAttributeMapping($jsonName);
+                $modelAttrName = $schemaClass::getAttributeMapping($jsonName);
                 $attributes[$modelAttrName] = $value;
             } elseif ($schemaClass::hasRelationshipMapping($jsonName) === true) {
-                $modelRelName        = $schemaClass::getRelationshipMapping($jsonName);
-                $fkName              = $modelSchemeInfo->getForeignKey($modelClass, $modelRelName);
+                $modelRelName = $schemaClass::getRelationshipMapping($jsonName);
+                $fkName = $modelSchemeInfo->getForeignKey($modelClass, $modelRelName);
                 $attributes[$fkName] = $value;
             }
         }
@@ -303,9 +307,10 @@ trait ControllerTrait
         ContainerInterface $container,
         string $namespace,
         string $locale = null
-    ): FormatterInterface {
+    ): FormatterInterface
+    {
         /** @var FormatterFactoryInterface $factory */
-        $factory   = $container->get(FormatterFactoryInterface::class);
+        $factory = $container->get(FormatterFactoryInterface::class);
         $formatter = $locale === null ?
             $factory->createFormatter($namespace) : $factory->createFormatterForLocale($namespace, $locale);
 
@@ -323,7 +328,7 @@ trait ControllerTrait
 
         try {
             /** @var PassportAccountManagerInterface $manager */
-            $manager    = $container->get(PassportAccountManagerInterface::class);
+            $manager = $container->get(PassportAccountManagerInterface::class);
             $curAccount = $manager->getPassport();
         } catch (ContainerExceptionInterface | NotFoundExceptionInterface $exception) {
             assert(false, 'Container do not have `' . PassportAccountManagerInterface::class . '`.');
@@ -368,9 +373,10 @@ trait ControllerTrait
         string $method,
         string $index = null,
         string $routePrefix = WebRoutes::TOP_GROUP_PREFIX
-    ): string {
+    ): string
+    {
         $routeName = static::routeName($routePrefix, $type, $method);
-        $result    = $index === null ?
+        $result = $index === null ?
             static::createRouteUrl($container, $routeName) :
             static::createRouteUrl($container, $routeName, [WebControllerInterface::ROUTE_KEY_INDEX => $index]);
 
@@ -393,12 +399,13 @@ trait ControllerTrait
         string $routeName,
         array $placeholders = [],
         array $queryParams = []
-    ): string {
+    ): string
+    {
         /** @var RouterInterface $router */
         $router = $container->get(RouterInterface::class);
 
         $hostUri = static::getHostUri($container);
-        $url     = $router->get($hostUri, $routeName, $placeholders, $queryParams);
+        $url = $router->get($hostUri, $routeName, $placeholders, $queryParams);
 
         return $url;
     }
@@ -415,11 +422,11 @@ trait ControllerTrait
     {
         /** @var RequestStorageInterface $curRequestStorage */
         $curRequestStorage = $container->get(RequestStorageInterface::class);
-        $curRequestUri     = $curRequestStorage->get()->getUri();
+        $curRequestUri = $curRequestStorage->get()->getUri();
 
         $scheme = $curRequestUri->getScheme();
-        $host   = $curRequestUri->getHost();
-        $port   = $curRequestUri->getPort();
+        $host = $curRequestUri->getHost();
+        $port = $curRequestUri->getPort();
 
         $result = $port === null || $port === 80 ? "$scheme://$host" : "$scheme://$host:$port";
 

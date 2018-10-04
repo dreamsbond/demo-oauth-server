@@ -58,7 +58,7 @@
         ],
         "post-update-cmd": ["@composer l:commands connect"],
 
-        "serve": "php -S 0.0.0.0:8080 -t public",
+        "serve": "php -S 0.0.0.0:8081 -t public",
 
         "develop": ["@clear-app-cache", "@composer update --optimize-autoloader --quiet"],
         "build": ["@refresh-app-cache", "@composer update --no-dev --optimize-autoloader --quiet"],
